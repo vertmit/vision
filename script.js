@@ -1,7 +1,3 @@
-const levels = [
-    {"size": [12, 5], "letters":["l o", "k d", "s f", "s q", "b s"]}
-]
-
 const combinations = [
     ["L S","I O","D F","S N", "F W", "G P"], // score 1
     ["N M","F K", "J I","\\ /"], // score 2
@@ -10,6 +6,7 @@ const combinations = [
     ["O 0", "? !", "` '"], // score 5
     ["; :","K k", "1 l", "{ ["] // score 6
 ]
+
 function randint(min, max) {
     return Math.floor(Math.random() * (max-min))+min;
 }
@@ -20,23 +17,10 @@ function sleep(ms) {
 
 const aspectRatio = 3/5
 
-let prevCombination = ""
-
-function getLevelData(level) {
-    const combinationSrc = combinations[Math.floor(Math.min(level/7, combinations.length-1))]
-    let combination = combinationSrc[randint(0, combinationSrc.length)]
-    while (combination === prevCombination) {
-        combination = combinationSrc[randint(0, combinationSrc.length)]
-    }
-    prevCombination = combination
-    const width = Math.floor((level+10)/3)
-    const height = Math.floor(width*aspectRatio)
-    return {"size": [width, height], "letters":combination}
-}
 
 let currentlevel = 1;
 let gameover = false;
-// `I scored ${level-1} on ${window.location}, can you do any better?`
+
 const shareOutcomes = [["scored", "got"],["a ", ""], ["on", "at"], [window.location.href, window.location.href.slice(0, -1)], ["can", "could"], ["top", "beat"], ["result", "score"]]
 console.log(window.location.href.slice(0, -1))
 function getShareString(level) {
@@ -54,11 +38,73 @@ function getShareString(level) {
     return `I ${shareOutcomes[0][binarylist[0]]} ${shareOutcomes[1][binarylist[1]]}${level-1} ${shareOutcomes[2][binarylist[2]]} ${shareOutcomes[3][binarylist[3]]}, ${shareOutcomes[4][binarylist[4]]} you ${shareOutcomes[5][binarylist[5]]} that ${shareOutcomes[6][binarylist[6]]}?`
 }
 
-console.log(getShareString(47))
+function displayGameOver(level) {
+    const bluredbg = document.createElement("div")
+    bluredbg.classList.add("bluredbg")
+    document.body.appendChild(bluredbg)
+    
+    const title = document.createElement("div")
+    
+    title.innerHTML = '<h1 style="animation: appear 2s forwards; opacity: 0; position: absolute; width: 100%;">Test over</h1>'
+    title.style.textAlign = "center"
+    title.style.position = "relative"
+    title.style.height = "50px"
+    title.style.width = "100%"
+    bluredbg.appendChild(title)
 
-function generateLevel(level) {
+    const subtitle = document.createElement("div")
+    subtitle.innerHTML = `<p style="animation-delay: 1s !important; animation: appear 2s forwards; opacity: 0; position: absolute; width: 100%;">You scored ${level-1}</p>`
+    subtitle.style.position = "relative"
+    subtitle.style.textAlign = "center"
+    subtitle.style.height = "36px"
+    subtitle.style.width = "100%"
+    bluredbg.appendChild(subtitle)
+
+    const actions = document.createElement("div")
+    actions.classList.add("actiontray")
+    bluredbg.appendChild(actions)
+
+    const actioncontents = document.createElement("div")
+    actioncontents.classList.add("actions")
+    
+    actions.appendChild(actioncontents)
+
+    const shareaction = document.createElement("i")
+    shareaction.classList.add("fa-solid")
+    shareaction.classList.add("fa-share")
+    shareaction.classList.add("action")
+    shareaction.addEventListener("click", ()=>{
+        navigator.share({text: getShareString(level)})
+    })
+    actioncontents.appendChild(shareaction)
+
+    const refreshaction = document.createElement("i")
+    refreshaction.classList.add("fa-solid")
+    refreshaction.classList.add("fa-rotate-right")
+    refreshaction.classList.add("action")
+    refreshaction.addEventListener("click", ()=>{
+        window.location.reload()
+    })
+    actioncontents.appendChild(refreshaction)
+}
+
+let prevCombination = ""
+
+function getCharacterLevelData(level) {
+    const combinationSrc = combinations[Math.floor(Math.min(level/7, combinations.length-1))]
+    let combination = combinationSrc[randint(0, combinationSrc.length)]
+    while (combination === prevCombination) {
+        combination = combinationSrc[randint(0, combinationSrc.length)]
+    }
+    prevCombination = combination
+    const width = Math.floor((level+10)/3)
+    const height = Math.floor(width*aspectRatio)
+    return {"size": [width, height], "letters":combination}
+}
+
+function generateCharacterLevel(level) {
     currentlevel = level
-    const leveldata = getLevelData(level)
+    const leveldata = getCharacterLevelData(level)
     const letters = leveldata.letters.split(" ")
 
     const quiztitle = document.getElementById("quiztitle")
@@ -99,7 +145,7 @@ function generateLevel(level) {
                 winner = item
                 hitbox.addEventListener("click", ()=>{
                     if (!gameover) {
-                        generateLevel(level+1)
+                        generateCharacterLevel(level+1)
                     }
                 })
             }
@@ -128,79 +174,204 @@ function generateLevel(level) {
             gameover = true
             winner.classList.add("showwinner")
             sleep(1000).then(()=>{
-                const bluredbg = document.createElement("div")
-                bluredbg.classList.add("bluredbg")
-                document.body.appendChild(bluredbg)
-                
-                const title = document.createElement("h1")
-                title.innerHTML = '<span class="headerani">Test over</span>'
-                bluredbg.appendChild(title)
-
-                const subtitle = document.createElement("p")
-                subtitle.innerHTML = `<span class="textani">You scored ${level-1}</span>`
-                bluredbg.appendChild(subtitle)
-
-                const actions = document.createElement("div")
-                actions.classList.add("actiontray")
-                bluredbg.appendChild(actions)
-
-                const actioncontents = document.createElement("div")
-                actioncontents.classList.add("actioncon")
-                actions.appendChild(actioncontents)
-
-                const copyaction = document.createElement("i")
-                copyaction.classList.add("fa-solid")
-                copyaction.classList.add("fa-copy")
-                copyaction.classList.add("action")
-                copyaction.addEventListener("click", ()=>{
-                    navigator.clipboard.writeText(getShareString(level))
-                    copyaction.classList.remove("fa-copy")
-                    copyaction.classList.add("fa-check")
-                    sleep(1000).then(()=>{
-                        copyaction.classList.add("fa-copy")
-                        copyaction.classList.remove("fa-check")
-                    })
-                })
-                actioncontents.appendChild(copyaction)
-
-                const refreshaction = document.createElement("i")
-                refreshaction.classList.add("fa-solid")
-                refreshaction.classList.add("fa-rotate-right")
-                refreshaction.classList.add("action")
-                refreshaction.addEventListener("click", ()=>{
-                    window.location.reload()
-                })
-                actioncontents.appendChild(refreshaction)
-
+                displayGameOver(level);
             })
         }
     })
 }
 
-document.getElementById("start").addEventListener("click", ()=>{
-    document.getElementById("startcontent").remove()
+function generateRandomColor() {
+    return [randint(0, 255), randint(0, 255), randint(0, 255)]
+}
 
-    const timebar = document.createElement("div")
-    timebar.id = "timebar"
-    document.body.appendChild(timebar)
-    const timeprogress = document.createElement("div")
-    timeprogress.id = "progress"
-    timebar.appendChild(timeprogress)
-
-
-    const quizcontent = document.createElement("div")
-    quizcontent.classList.add("floatingcontentpro")
-    document.body.appendChild(quizcontent)
-
-    const quiztitle = document.createElement("h1")
-    quiztitle.id = "quiztitle"
-    quizcontent.appendChild(quiztitle)
-
-    const quizitems = document.createElement("div")
-    quizitems.id = "quizitems"
-
-    quizcontent.appendChild(quizitems)
+function generateOddColour(baseColor, targetDistance) {
+    let randomColor;
     
+    randomColor = [
+        randint(baseColor[0]-Math.floor(targetDistance/2), baseColor[0]+Math.floor(targetDistance/2)),
+        randint(baseColor[1]-Math.floor(targetDistance/2), baseColor[1]+Math.floor(targetDistance/2)),
+        randint(baseColor[2]-Math.floor(targetDistance/2), baseColor[2]+Math.floor(targetDistance/2))
+    ];
 
-    generateLevel(1)
+    return randomColor;
+}
+
+function getHueLevelData(level) {
+    let mainColour = generateRandomColor()
+    const colors = [mainColour, generateOddColour(mainColour, Math.max(255-Math.floor(level/2), 3))]
+    prevCombination = colors
+    const width = Math.floor((level+10)/3)
+    const height = Math.floor(width*aspectRatio)
+    return {"size": [width, height], "colours":colors}
+}
+
+function generateHueLevel(level) {
+    currentlevel = level
+    const leveldata = getHueLevelData(level)
+
+    const quiztitle = document.getElementById("quiztitle")
+    quiztitle.textContent = `Click The odd colour`
+
+    const quizitems = document.getElementById("quizitems")
+    while (quizitems.firstChild) {
+        quizitems.firstChild.remove()
+    }
+
+    const oddlocation = [randint(0, leveldata.size[0]), randint(0, leveldata.size[1])]
+
+    const timeprogress = document.getElementById("progress")
+    timeprogress.style.animation = ""
+    void timeprogress.offsetWidth;
+    const wait = 7
+    timeprogress.style.animation = `shrinkingbar ${wait}s linear forwards`
+
+    const coloursize = window.innerWidth / 1536 * ( (1 / leveldata.size[1])*250)
+
+    let winner = null
+    for (let y = 0; y < leveldata.size[1]; y++) {
+        const row = document.createElement("div")
+        row.classList.add("row")
+        quizitems.appendChild(row)
+
+        for (let x = 0; x < leveldata.size[0]; x++) {
+            const item = document.createElement("div");
+            item.classList.add("item")
+            item.classList.add("hue")
+            row.appendChild(item)
+
+            const hitbox = document.createElement("div")
+            hitbox.classList.add("hitbox")
+            
+
+            if (oddlocation[0] === x && oddlocation[1] === y) {
+                console.log(leveldata)
+                item.style.backgroundColor = `rgb(${leveldata.colours[1][0]}, ${leveldata.colours[1][1]}, ${leveldata.colours[1][2]})`
+                winner = item
+                hitbox.addEventListener("click", ()=>{
+                    if (!gameover) {
+                        generateHueLevel(level+1)
+                    }
+                })
+            }
+            else {
+                item.style.backgroundColor = `rgb(${leveldata.colours[0][0]}, ${leveldata.colours[0][1]}, ${leveldata.colours[0][2]})`
+                
+                item.style.animation = `hide ${wait}s forwards`
+                hitbox.addEventListener('click', () => {
+                    if (!gameover) {
+                        item.classList.add("shake")
+                        item.appendChild(hitbox)
+                    }
+                });
+        
+            }
+            item.appendChild(hitbox)
+            item.style.width = `${coloursize}px`
+            item.style.width = `${coloursize}px`
+        }
+    }
+    sleep(wait*1000).then(()=>{
+        if (currentlevel === level) {
+            gameover = true
+            winner.classList.add("showwinner")
+            sleep(1000).then(()=>{
+                displayGameOver(level);
+            })
+        }
+    })
+}
+
+function initTest() {
+    const testHolder = document.getElementById("tests")
+    let delay = 0
+    for (let elmt of testHolder.children) {
+        sleep(delay*1000).then(()=> {
+            elmt.style.animation = "disappear 500ms ease-in forwards"
+        })
+        elmt.style.mouseEvents = "none"
+        elmt.style.cursor = "default"
+        delay += 0.1
+    }
+    sleep(delay*1000+500).then(()=> {
+        testHolder.remove()
+        const timebar = document.createElement("div")
+        timebar.id = "timebar"
+        document.body.appendChild(timebar)
+        const timeprogress = document.createElement("div")
+        timeprogress.id = "progress"
+        timebar.appendChild(timeprogress)
+
+        const quizcontent = document.createElement("div")
+        quizcontent.classList.add("floatingcontentpro")
+        document.body.appendChild(quizcontent)
+
+        const quiztitle = document.createElement("h1")
+        quiztitle.id = "quiztitle"
+        quizcontent.appendChild(quiztitle)
+
+        const quizitems = document.createElement("div")
+        quizitems.id = "quizitems"
+
+        quizcontent.appendChild(quizitems)
+        if (selectedTest === 0){
+            generateCharacterLevel(1)
+        } else if (selectedTest === 1){
+            generateHueLevel(1)
+        }
+        
+    })
+}
+
+const homemenu = document.getElementById("startcontent")
+let selectedTest = 0
+
+function testMenu() {
+    let delay = 0
+    for (let elmt of homemenu.children) {
+        sleep(delay*1000).then(()=> {
+            elmt.style.animation = "disappear 500ms ease-in forwards"
+        })
+        elmt.style.mouseEvents = "none"
+        elmt.style.cursor = "default"
+        delay += 0.1
+    }
+    sleep(delay*1000+500).then(()=> {
+        homemenu.remove()
+    })
+    const testHolder = document.createElement("div")
+    testHolder.classList.add("floatingcontent")
+
+    const charactor = document.createElement("p")
+    charactor.classList.add("btn")
+    charactor.textContent = "Character Pick"
+    charactor.addEventListener("click", ()=> {
+        selectedTest = 0
+        initTest()
+    })
+    testHolder.appendChild(charactor)
+    testHolder.id = "tests"
+
+    const hue = document.createElement("p")
+    hue.classList.add("btn")
+    hue.textContent = "Tone Divider"
+    testHolder.appendChild(hue)
+    hue.addEventListener("click", ()=> {
+        selectedTest = 1
+        initTest()
+    })
+
+    delay = 0
+    for (let elmt of testHolder.children) {
+        sleep(delay*1000).then(()=> {
+            elmt.style.animation = "appear 1s ease-out forwards"
+        })
+        elmt.style.opacity = "0"
+        delay += 0.1
+    }
+
+    document.body.appendChild(testHolder)
+}
+
+document.getElementById("start").addEventListener("click", ()=>{
+    testMenu()
 });
