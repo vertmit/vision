@@ -17,16 +17,17 @@ function sleep(ms) {
 
 const aspectRatio = 3/5
 
-
+let selectedTest = 0
 let currentlevel = 1;
 let gameover = false;
 
-const shareOutcomes = [["scored", "got"],["a ", ""], ["on", "at"], [window.location.href, window.location.href.slice(0, -1)], ["can", "could"], ["top", "beat"], ["result", "score"]]
-console.log(window.location.href.slice(0, -1))
+const shareOutcomes = [["scored", "got"],["a ", ""], ["found on", "at"], [window.location.href.replace(/\//g, "").split(":")[1], window.location.href], ["can", "could"], ["top", "beat"], ["result", "score"]]
+const testNames = ["Character Pick", "Tone Divider"]
+
 function getShareString(level) {
     let number = level
     let binarylist = []
-    while (number > 0) {
+    while (number > 0 && binarylist.length<7) {
         binarylist.push(number%2)
         number = Math.floor(number/2)
     }
@@ -34,8 +35,7 @@ function getShareString(level) {
         binarylist.push(0)
     }
     binarylist = binarylist.reverse()
-    console.log(binarylist)
-    return `I ${shareOutcomes[0][binarylist[0]]} ${shareOutcomes[1][binarylist[1]]}${level-1} ${shareOutcomes[2][binarylist[2]]} ${shareOutcomes[3][binarylist[3]]}, ${shareOutcomes[4][binarylist[4]]} you ${shareOutcomes[5][binarylist[5]]} that ${shareOutcomes[6][binarylist[6]]}?`
+    return `I ${shareOutcomes[0][binarylist[0]]} ${shareOutcomes[1][binarylist[1]]}${level-1} on ${testNames[selectedTest]} ${shareOutcomes[2][binarylist[2]]} ${shareOutcomes[3][binarylist[3]]}, ${shareOutcomes[4][binarylist[4]]} you ${shareOutcomes[5][binarylist[5]]} that ${shareOutcomes[6][binarylist[6]]}?`
 }
 
 function displayGameOver(level) {
@@ -43,31 +43,29 @@ function displayGameOver(level) {
     bluredbg.classList.add("bluredbg")
     document.body.appendChild(bluredbg)
     
-    const title = document.createElement("div")
-    
-    title.innerHTML = '<h1 style="animation: appear 2s forwards; opacity: 0; position: absolute; width: 100%;">Test over</h1>'
-    title.style.textAlign = "center"
+    const title = document.createElement("h1")
+    title.textContent = "Test over"
+    title.style.animation = "appear 2s forwards"
+    title.style.opacity = 0
     title.style.position = "relative"
-    title.style.height = "50px"
-    title.style.width = "100%"
+    title.style.textAlign = "center"
+
     bluredbg.appendChild(title)
 
-    const subtitle = document.createElement("div")
-    subtitle.innerHTML = `<p style="animation-delay: 1s !important; animation: appear 2s forwards; opacity: 0; position: absolute; width: 100%;">You scored ${level-1}</p>`
+    const subtitle = document.createElement("p")
+    subtitle.textContent = `You scored ${level-1}`
+    sleep(500).then(()=>{subtitle.style.animation = "appear 2s forwards"})
+    subtitle.style.opacity = 0
     subtitle.style.position = "relative"
     subtitle.style.textAlign = "center"
-    subtitle.style.height = "36px"
-    subtitle.style.width = "100%"
+    subtitle.style.paddingBottom = "10px"
     bluredbg.appendChild(subtitle)
 
-    const actions = document.createElement("div")
-    actions.classList.add("actiontray")
-    bluredbg.appendChild(actions)
 
     const actioncontents = document.createElement("div")
     actioncontents.classList.add("actions")
     
-    actions.appendChild(actioncontents)
+    bluredbg.appendChild(actioncontents)
 
     const shareaction = document.createElement("i")
     shareaction.classList.add("fa-solid")
@@ -184,21 +182,46 @@ function generateRandomColor() {
     return [randint(0, 255), randint(0, 255), randint(0, 255)]
 }
 
+function randsign() {
+    if (Math.random() < 0.5) {
+        return 1
+    }
+    return -1
+}
+
 function generateOddColour(baseColor, targetDistance) {
-    let randomColor;
+    let randomColor = [];
+    let signs = [
+        randsign(),
+        randsign(),
+        randsign()
+    ]
     
-    randomColor = [
-        randint(baseColor[0]-Math.floor(targetDistance/2), baseColor[0]+Math.floor(targetDistance/2)),
-        randint(baseColor[1]-Math.floor(targetDistance/2), baseColor[1]+Math.floor(targetDistance/2)),
-        randint(baseColor[2]-Math.floor(targetDistance/2), baseColor[2]+Math.floor(targetDistance/2))
-    ];
+    if (signs[0] === 1) {
+        randomColor.push(randint(baseColor[0]+Math.floor(targetDistance/2-targetDistance/4), baseColor[0]+Math.floor(targetDistance/2)))
+    } else {
+        randomColor.push(randint(baseColor[0]-Math.floor(targetDistance/2), baseColor[0]-Math.floor(targetDistance/2-targetDistance/4)))
+    }
+
+    if (signs[1] === 1) {
+        randomColor.push(randint(baseColor[1]+Math.floor(targetDistance/2-targetDistance/4), baseColor[1]+Math.floor(targetDistance/2)))
+    } else {
+        randomColor.push(randint(baseColor[1]-Math.floor(targetDistance/2), baseColor[1]-Math.floor(targetDistance/2-targetDistance/4)))
+    }
+
+    if (signs[2] === 1) {
+        randomColor.push(randint(baseColor[2]+Math.floor(targetDistance/2-targetDistance/4), baseColor[2]+Math.floor(targetDistance/2)))
+    } else {
+        randomColor.push(randint(baseColor[2]-Math.floor(targetDistance/2), baseColor[2]-Math.floor(targetDistance/2-targetDistance/4)))
+    }
+    
 
     return randomColor;
 }
 
 function getHueLevelData(level) {
     let mainColour = generateRandomColor()
-    const colors = [mainColour, generateOddColour(mainColour, Math.max(255-Math.floor(level/2), 3))]
+    const colors = [mainColour, generateOddColour(mainColour, Math.max(100-Math.floor(level/2), 3))]
     prevCombination = colors
     const width = Math.floor((level+10)/3)
     const height = Math.floor(width*aspectRatio)
@@ -210,7 +233,7 @@ function generateHueLevel(level) {
     const leveldata = getHueLevelData(level)
 
     const quiztitle = document.getElementById("quiztitle")
-    quiztitle.textContent = `Click The odd colour`
+    quiztitle.textContent = ``
 
     const quizitems = document.getElementById("quizitems")
     while (quizitems.firstChild) {
@@ -244,7 +267,6 @@ function generateHueLevel(level) {
             
 
             if (oddlocation[0] === x && oddlocation[1] === y) {
-                console.log(leveldata)
                 item.style.backgroundColor = `rgb(${leveldata.colours[1][0]}, ${leveldata.colours[1][1]}, ${leveldata.colours[1][2]})`
                 winner = item
                 hitbox.addEventListener("click", ()=>{
@@ -255,11 +277,12 @@ function generateHueLevel(level) {
             }
             else {
                 item.style.backgroundColor = `rgb(${leveldata.colours[0][0]}, ${leveldata.colours[0][1]}, ${leveldata.colours[0][2]})`
-                
-                item.style.animation = `hide ${wait}s forwards`
+                item.classList.add("dud")
                 hitbox.addEventListener('click', () => {
                     if (!gameover) {
-                        item.classList.add("shake")
+                        item.classList.remove('hueshake');
+                        void item.offsetWidth;
+                        item.classList.add("hueshake")
                         item.appendChild(hitbox)
                     }
                 });
@@ -274,6 +297,9 @@ function generateHueLevel(level) {
         if (currentlevel === level) {
             gameover = true
             winner.classList.add("showwinner")
+            for (let item of document.getElementsByClassName("dud")) {
+                item.style.opacity = 0.2
+            }
             sleep(1000).then(()=>{
                 displayGameOver(level);
             })
@@ -323,7 +349,6 @@ function initTest() {
 }
 
 const homemenu = document.getElementById("startcontent")
-let selectedTest = 0
 
 function testMenu() {
     let delay = 0
