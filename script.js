@@ -21,7 +21,7 @@ let selectedTest = 0
 let currentlevel = 1;
 let gameover = false;
 
-const shareOutcomes = [["scored", "got"],["a ", ""], ["found on", "at"], [window.location.href.split("//")[1].slice(1, -1), window.location.href], ["can", "could"], ["top", "beat"], ["result", "score"]]
+const shareOutcomes = [["scored", "got"],["a ", ""], ["found on", "at"], [window.location.href.split("//")[1].slice(0, -1), window.location.href], ["can", "could"], ["top", "beat"], ["result", "score"]]
 const testNames = ["Character Pick", "Tone Divider"]
 
 function getShareString(level) {
