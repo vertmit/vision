@@ -7,6 +7,16 @@ const combinations = [
     ["; :","K k", "1 l", "{ ["] // score 6
 ]
 
+const emoteCombinations = [
+    ["😶 🤢", "😡 🦍", "🐋 👥", "✅ 🐕"], // score 1
+    ["🤣 😶", "🐖 🐏", "🧑🏼 🧑🏿", "🧑🏼‍🎓 🙅🏼‍♀️"], // score 2
+    ["🥰 😍", "☺️ 😐", "😁 🫥"], // score 3
+    ["✅ 🤢", "🥴 😵‍💫", "🐿️ 🦘"], // score 4
+    ["💀 ☠️", "😺 😹", "🤨 😐"], // score 5
+    ["🙊 🙉", "😼 😾", "🐪 🐫", "😀 😃", "🥺 🥹"] // score 6
+]
+
+
 function randint(min, max) {
     return Math.floor(Math.random() * (max-min))+min;
 }
@@ -22,7 +32,7 @@ let currentlevel = 1;
 let gameover = false;
 
 const shareOutcomes = [["scored", "got"],["a ", ""], ["found on", "at"], [window.location.href.split("//")[1].slice(0, -1), window.location.href], ["can", "could"], ["top", "beat"], ["result", "score"]]
-const testNames = ["Character Pick", "Tone Divider"]
+const testNames = ["Character Pick", "Tone Divider", "Emotional Intelligence"]
 
 function getShareString(level) {
     let number = level
@@ -95,7 +105,7 @@ function getCharacterLevelData(level) {
         combination = combinationSrc[randint(0, combinationSrc.length)]
     }
     prevCombination = combination
-    const width = Math.floor((level+10)/3)
+    const width = Math.floor((level+11)/3)
     const height = Math.floor(width*aspectRatio)
     return {"size": [width, height], "letters":combination}
 }
@@ -144,6 +154,97 @@ function generateCharacterLevel(level) {
                 hitbox.addEventListener("click", ()=>{
                     if (!gameover) {
                         generateCharacterLevel(level+1)
+                    }
+                })
+            }
+            else {
+                const innerspan = document.createElement("span")
+                innerspan.textContent = letters[0]
+                item.innerHTML = innerspan.outerHTML
+                item.style.animation = `hide ${wait}s forwards`
+                hitbox.addEventListener('click', () => {
+                    if (!gameover) {
+                        innerspan.classList.add("shake")
+                        item.innerHTML = innerspan.outerHTML
+                        item.appendChild(hitbox)
+                    }
+                });
+        
+            }
+            item.appendChild(hitbox)
+            item.style.fontSize = `${textSize}px`
+            item.style.width = `${textSize}px`
+            item.style.width = `${textSize}px`
+        }
+    }
+    sleep(wait*1000).then(()=>{
+        if (currentlevel === level) {
+            gameover = true
+            winner.classList.add("showwinner")
+            sleep(1000).then(()=>{
+                displayGameOver(level);
+            })
+        }
+    })
+}
+
+function getEmoteLevelData(level) {
+    const combinationSrc = emoteCombinations[Math.floor(Math.min(level/7, emoteCombinations.length-1))]
+    let combination = combinationSrc[randint(0, combinationSrc.length)]
+    while (combination === prevCombination) {
+        combination = combinationSrc[randint(0, combinationSrc.length)]
+    }
+    prevCombination = combination
+    const width = Math.floor((level+11)/3)
+    const height = Math.floor(width*aspectRatio)
+    return {"size": [width, height], "letters":combination}
+}
+
+function generateEmoteLevel(level) {
+    currentlevel = level
+    const leveldata = getEmoteLevelData(level)
+    const letters = leveldata.letters.split(" ")
+
+    const quiztitle = document.getElementById("quiztitle")
+    quiztitle.textContent = `👉🏼 ${letters[1]}`
+    quiztitle.style.textDecoration = "none"
+
+    const quizitems = document.getElementById("quizitems")
+    while (quizitems.firstChild) {
+        quizitems.firstChild.remove()
+    }
+
+    const oddlocation = [randint(0, leveldata.size[0]), randint(0, leveldata.size[1])]
+
+    const timeprogress = document.getElementById("progress")
+    timeprogress.style.animation = ""
+    void timeprogress.offsetWidth;
+    const wait = 7
+    timeprogress.style.animation = `shrinkingbar ${wait}s linear forwards`
+
+    const textSize = window.innerWidth / 1536 * ( (1 / leveldata.size[1])*500)
+
+    let winner = null
+    for (let y = 0; y < leveldata.size[1]; y++) {
+        const row = document.createElement("div")
+        row.classList.add("row")
+        quizitems.appendChild(row)
+
+        for (let x = 0; x < leveldata.size[0]; x++) {
+            const item = document.createElement("div");
+            item.classList.add("item")
+            row.appendChild(item)
+
+            const hitbox = document.createElement("div")
+            hitbox.classList.add("hitbox")
+            
+
+            if (oddlocation[0] === x && oddlocation[1] === y) {
+                item.textContent = letters[1]
+                winner = item
+                hitbox.addEventListener("click", ()=>{
+                    if (!gameover) {
+                        generateEmoteLevel(level+1)
                     }
                 })
             }
@@ -343,6 +444,8 @@ function initTest() {
             generateCharacterLevel(1)
         } else if (selectedTest === 1){
             generateHueLevel(1)
+        } else if (selectedTest === 2){
+            generateEmoteLevel(1)
         }
         
     })
@@ -382,6 +485,15 @@ function testMenu() {
     testHolder.appendChild(hue)
     hue.addEventListener("click", ()=> {
         selectedTest = 1
+        initTest()
+    })
+
+    const emote = document.createElement("p")
+    emote.classList.add("btn")
+    emote.textContent = "Emotional Intelligence"
+    testHolder.appendChild(emote)
+    emote.addEventListener("click", ()=> {
+        selectedTest = 2
         initTest()
     })
 
