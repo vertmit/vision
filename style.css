@@ -14,6 +14,7 @@ body, html {
 
 .floatingcontent {
     display: flex;
+
     flex-direction: column;
     align-items: center;
     text-align: center;
@@ -231,32 +232,6 @@ span {
     width: 100%;
 }
 
-.hue {
-    transition: 500ms;
-    position: relative;
-    border-radius: 100%;
-    margin: 5px;
-}
-
-.hueshake {
-    animation: wrongHue 300ms !important;
-}
-
-@keyframes wrongHue {
-    25% {
-        transform: translateX(0%);
-    }
-    50% {
-        transform: translateX(-10%);
-    }
-    75% {
-        transform: translateX(10%);
-    }
-    100% {
-        transform: translateX(0%);
-    }
-}
-
 @keyframes wrong {
     25% {
         padding-left: 10%;
@@ -280,6 +255,16 @@ span {
     width: 100vw;
     height: 40px;
     background-color: rgb(63, 63, 63);
+    overflow: hidden;
+}
+
+.progresstext {
+    position: absolute;
+    font-size: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: 250ms;
+    text-align: center;
 }
 
 #progress {
@@ -296,6 +281,12 @@ span {
 .showwinner:hover {
     transition: transform 500ms;
     transform: scale(1.5);
+}
+
+.cup {
+    transition: 750ms;
+    background-color: red;
+    position: absolute;
 }
 
 @keyframes shrinkingbar {

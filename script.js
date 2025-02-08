@@ -21,6 +21,14 @@ function randint(min, max) {
     return Math.floor(Math.random() * (max-min))+min;
 }
 
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -32,7 +40,7 @@ let currentlevel = 1;
 let gameover = false;
 
 const shareOutcomes = [["scored", "got"],["a ", ""], ["found on", "at"], [window.location.href.split("//")[1].slice(0, -1), window.location.href], ["can", "could"], ["top", "beat"], ["result", "score"]]
-const testNames = ["Character Pick", "Tone Divider", "Emotional Intelligence"]
+const testNames = ["Character Pick", "Tone Divider", "Emotional Intelligence", "Cup n' ball"]
 
 function getShareString(level) {
     let number = level
@@ -408,6 +416,212 @@ function generateHueLevel(level) {
     })
 }
 
+function getPositionFromTranslate(value) {
+    const clean = value.split("(")[1].split(")")[0].replace(/px/g, "").replace(",", "").split(" ")
+    return [Number(clean[0]), Number(clean[1])]
+}
+
+function moveCups(cups, cupWidth, cupHeight, cupsWidth, cupsHeight, cupWidth, spacing) {
+    let xPos = 0;
+    let yPos = 0;
+    for (let y = 0; y < cupsHeight; y++) {
+        xPos = 0
+        for (let x = 0; x < cupsWidth; x++) {
+            const cup = cups[x + y * cupsWidth]
+            cup.style.zIndex = x + y
+            cup.style.transform = `translate(${(cupWidth+spacing)*x}px, ${(cupHeight+spacing)*y}px)`
+
+            xPos ++
+        }
+        yPos ++
+    }
+}
+
+function shuffleElements(parent) {
+    let elements = []
+    while (parent.firstChild) {
+        elements.push(parent.firstChild)
+        parent.firstChild.remove()
+    }
+    elements = shuffle(elements)
+    while (elements[elements.length-1]) {
+        parent.appendChild(elements[elements.length-1])
+        elements.pop()
+    }
+}
+
+let loss = false
+
+function generateCupnBallLevel(level) {
+    const cupsWidth = Math.floor((level+3)/2)
+    const cupsHeight = Math.floor(cupsWidth*(2/3))
+
+    document.body.style.cursor = "none"
+
+    const cupWidth = ((window.innerWidth*0.5)/cupsWidth)*0.5
+    const cupHeight = cupWidth * 5/3
+
+    const cupSpacing = ((window.innerWidth*0.3)/cupsWidth)*0.5;
+
+
+    const testcontainer = document.getElementById("quizitems")
+    testcontainer.style.flexDirection = "row"
+    testcontainer.style.flexWrap = "wrap"
+
+    while (testcontainer.firstChild) {
+        testcontainer.firstChild.remove()
+    }
+
+    testcontainer.style.width = `${cupsWidth*(cupWidth+cupSpacing)-cupSpacing}px`
+    testcontainer.style.height = `${cupsHeight*(cupHeight+cupSpacing)-cupSpacing}px`
+
+    const progressholder = document.createElement("div")
+    progressholder.id = "timebar"
+
+    const progressText = document.createElement("div")
+    progressText.innerHTML = "Focus<br>Shuffling<br>Pick"
+    progressText.classList.add("progresstext")
+    progressholder.appendChild(progressText)
+
+    document.body.appendChild(progressholder)
+
+    const progress = document.createElement("div")
+    progress.id = "progress"
+
+    progressholder.appendChild(progress)
+
+    let cuppos = []
+
+    const winner = [Math.floor(cupsWidth/2), Math.floor(cupsHeight/2)]
+
+    let winningcup;
+
+    for (let y = 0; y < cupsHeight; y ++) {
+        for (let x = 0; x < cupsWidth; x ++) {
+            const cup = document.createElement("div")
+            const tip = document.createElement("div")
+            tip.style.backgroundColor = "white"
+            tip.style.width = `${cupWidth*1.2}px`
+            tip.style.height = `${cupHeight*0.1}px`
+            tip.style.border = `${cupWidth/10}px solid black`
+            tip.style.position = "absolute"
+            tip.style.bottom = `-${cupWidth/10}px`
+            tip.style.left = "50%"
+            tip.style.transform = "translateX(-50%)"
+            tip.style.borderRadius = " 50px 50px 50px 50px"
+            cup.appendChild(tip)
+
+            cup.classList.add("cup")
+            cup.style.transform = `translate(${(cupWidth+cupSpacing)*x}px, ${(cupHeight+cupSpacing)*y}px)`
+            cup.style.width = `${cupWidth}px`
+            cup.style.height = `${cupHeight}px`
+            cup.style.borderTopLeftRadius = `${cupWidth/6}px`
+            cup.style.borderTopRightRadius = `${cupWidth/6}px`
+            cup.style.border = `${cupWidth/10}px solid black`
+            
+            cup.x = cupWidth*x
+            cup.y = cupHeight*y
+            if (winner[0] === x && winner[1] === y) {
+                winningcup = cup
+            }
+            testcontainer.appendChild(cup)
+            cuppos.push(cup)
+        }
+    }
+    let winnerstartpos = getPositionFromTranslate(winningcup.style.transform)
+    const ball = document.createElement("div")
+    ball.style.width = `${Math.min(cupWidth, cupHeight)*0.7}px`
+    ball.style.height = `${Math.min(cupWidth, cupHeight)*0.7}px`
+    ball.style.border =  `${cupWidth/10}px solid black`
+    ball.style.borderRadius = "50%"
+    ball.style.backgroundColor = "white"
+    ball.style.position = "absolute"
+    
+    ball.style.zIndex = -100
+    testcontainer.appendChild(ball)
+    const ballOffset = [winningcup.offsetWidth/2-ball.offsetWidth/2, winningcup.offsetHeight-ball.offsetHeight]
+    ball.style.display = "none"
+    sleep(500).then(()=> {
+        winningcup.style.transform = `translate(${winnerstartpos[0]}px, ${winnerstartpos[1]-cupHeight+10}px)`
+        ball.style.display = "block"
+        ball.style.transform = `translate(${winnerstartpos[0]+ballOffset[0]}px, ${winnerstartpos[1]+ballOffset[1]}px)`
+    })
+    sleep(1500).then(()=>{
+        winningcup.style.transform = `translate(${winnerstartpos[0]}px, ${winnerstartpos[1]}px)`
+        sleep(750).then(()=>{
+            ball.style.display = "none"
+        })
+        
+    })
+
+    sleep(2500).then(()=>{
+        shuffleElements(testcontainer)
+        let shuffleAmount = level+3
+        let speed = Math.max((1000 - (level/3)**2), 500)
+
+        for (let cup of document.getElementsByClassName("cup")) {
+            cup.style.transition = `${speed/4*2}ms`
+        }
+        let shufflesDone = 0
+        let delay = 0
+        progressText.style.transform = "translate(-50%, -35px)"
+        progress.style.transition = `width ${speed*shuffleAmount}ms linear, background-color 250ms`
+        progress.style.backgroundColor = "#FF9900"
+        progress.style.width = `0%`
+        
+        for (let i = 0; i < shuffleAmount; i++) {
+            sleep(speed*i).then(()=>{
+                cuppos = shuffle(cuppos)
+                moveCups(cuppos, cupWidth, cupHeight, cupsWidth, cupsHeight, cupWidth, cupSpacing)
+                shufflesDone++;
+                
+            })
+            delay ++
+        }
+        sleep(speed*delay).then(()=>{
+            shuffleElements(testcontainer)
+            progressText.style.transform = "translate(-50%, -72px)"
+            document.body.style.cursor = "default"
+            for (let cup of document.getElementsByClassName("cup")) {
+                cup.style.cursor = "pointer"
+                cup.style.transition = "750ms"
+                cup.addEventListener("click", ()=>{
+                    if (!loss) {
+                        const cuppos = getPositionFromTranslate(cup.style.transform)
+                        if (cup === winningcup) {
+                            ball.style.transform = `translate(${cuppos[0]+ballOffset[0]}px, ${cuppos[1]+ballOffset[1]}px)`
+                            ball.style.display = "block"
+                            sleep(1000).then(()=>{
+                                progress.style.transition = `250ms`
+                                progress.style.backgroundColor = "rgb(58, 153, 49)"
+                                progress.style.width = `100%`
+                                progressText.style.transform = "translate(-50%, 0px)"
+                                cup.style.transform = `translate(${cuppos[0]}px, ${cuppos[1]}px)`
+                                sleep(1000).then(()=>{
+                                generateCupnBallLevel(level+1)
+                                })
+                            })
+                        } else {
+                            loss = true
+                            sleep(1000).then(()=>{
+                                let winnercuppos = getPositionFromTranslate(winningcup.style.transform)
+                                ball.style.transform = `translate(${winnercuppos[0]+ballOffset[0]}px, ${winnercuppos[1]+ballOffset[1]}px)`
+                                ball.style.display = "block"
+                                winningcup.style.transform = `translate(${winnercuppos[0]}px, ${winnercuppos[1]-cupHeight/2}px)`
+                                sleep(1000).then(()=>{
+                                    displayGameOver(level)
+                                })
+                            })
+                        }
+                        
+                        cup.style.transform = `translate(${cuppos[0]}px, ${cuppos[1]-cupHeight/2}px)`
+                    }
+                })
+            }
+        })
+    })
+}
+
 function initTest() {
     const testHolder = document.getElementById("tests")
     let delay = 0
@@ -440,12 +654,16 @@ function initTest() {
         quizitems.id = "quizitems"
 
         quizcontent.appendChild(quizitems)
+        document.body.appendChild(timebar)
         if (selectedTest === 0){
             generateCharacterLevel(1)
         } else if (selectedTest === 1){
             generateHueLevel(1)
         } else if (selectedTest === 2){
             generateEmoteLevel(1)
+        } else if (selectedTest === 3){
+            timebar.remove()
+            generateCupnBallLevel(1)
         }
         
     })
@@ -468,44 +686,28 @@ function testMenu() {
     })
     const testHolder = document.createElement("div")
     testHolder.classList.add("floatingcontent")
-
-    const charactor = document.createElement("p")
-    charactor.classList.add("btn")
-    charactor.textContent = "Character Pick"
-    charactor.addEventListener("click", ()=> {
-        selectedTest = 0
-        initTest()
-    })
-    testHolder.appendChild(charactor)
     testHolder.id = "tests"
 
-    const hue = document.createElement("p")
-    hue.classList.add("btn")
-    hue.textContent = "Tone Divider"
-    testHolder.appendChild(hue)
-    hue.addEventListener("click", ()=> {
-        selectedTest = 1
-        initTest()
-    })
-
-    const emote = document.createElement("p")
-    emote.classList.add("btn")
-    emote.textContent = "Emotional Intelligence"
-    testHolder.appendChild(emote)
-    emote.addEventListener("click", ()=> {
-        selectedTest = 2
-        initTest()
-    })
-
+    let index = 0
     delay = 0
-    for (let elmt of testHolder.children) {
-        sleep(delay*1000).then(()=> {
-            elmt.style.animation = "appear 1s ease-out forwards"
+    for (let test of testNames) {
+        const btn = document.createElement("p")
+        btn.classList.add("btn")
+        btn.textContent = test
+        const currentindex = index
+        btn.addEventListener("click", ()=> {
+            selectedTest = currentindex
+            initTest()
         })
-        elmt.style.opacity = "0"
+        testHolder.appendChild(btn)
+        sleep(delay*1000).then(()=> {
+            btn.style.animation = "appear 1s ease-out forwards"
+        })
+        btn.style.opacity = "0"
         delay += 0.1
+        index ++;
     }
-
+ 
     document.body.appendChild(testHolder)
 }
 
