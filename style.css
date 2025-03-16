@@ -57,6 +57,7 @@ h1 {
     position: relative;
     width: 100%;
     min-height: 5px;
+    user-select: none;
 }
 p {
     font-weight: 400;
@@ -212,6 +213,11 @@ p {
     background: transparent;
 }
 
+.item.hue {
+    border-radius: 200px;
+    margin: 10px
+}
+
 .shake {
     animation: wrong 200ms forwards;
 }
@@ -220,6 +226,25 @@ span {
     pointer-events: none;
     line-height: 16px;
     max-height: 0px;
+}
+
+.hueshake {
+    animation: shake 200ms forwards;
+}
+
+@keyframes shake {
+    25% {
+        transform: translateX(10%);
+    }
+    50% {
+        transform: translateX(-10%);
+    }
+    75% {
+        transform: translateX(10%);
+    }
+    100% {
+        transform: translateX(0%);
+    }
 }
 
 .hitbox {
@@ -288,6 +313,7 @@ span {
     background-color: red;
     position: absolute;
 }
+
 
 @keyframes shrinkingbar {
     0% {
